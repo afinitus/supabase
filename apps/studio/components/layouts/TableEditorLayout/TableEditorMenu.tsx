@@ -46,21 +46,7 @@ export const TableEditorMenu = () => {
   const { id: _id, ref: projectRef } = useParams()
   const id = _id ? Number(_id) : undefined
   const snap = useTableEditorStateSnapshot()
-  const { selectedSchema, setSelectedSchema, defaultSchema } = useQuerySchemaState()
-
-  useEffect(() => {
-    const onPopState = () => {
-      // temporary workaround for the nuqs fast-back desync until
-      // https://github.com/supabase/supabase/pull/52016 lands.
-      const schemaInUrl = new URLSearchParams(window.location.search).get('schema')
-      const schema = schemaInUrl ?? defaultSchema
-      if (schema === selectedSchema) return
-      setSelectedSchema(schema, { history: 'replace' })
-    }
-
-    window.addEventListener('popstate', onPopState)
-    return () => window.removeEventListener('popstate', onPopState)
-  }, [defaultSchema, selectedSchema, setSelectedSchema])
+  const { selectedSchema, setSelectedSchema } = useQuerySchemaState()
 
   const [searchText, setSearchText] = useState<string>('')
   const [isSchemaDropdownOpen, setIsSchemaDropdownOpen] = useState(false)
@@ -189,7 +175,7 @@ export const TableEditorMenu = () => {
               onSelectSchema={(name: string) => {
                 setSearchText('')
                 setIsSchemaDropdownOpen(false)
-                setSelectedSchema(name, { history: name === selectedSchema ? 'replace' : 'push' })
+                setSelectedSchema(name, { history: 'replace' })
               }}
               onSelectCreateSchema={() => {
                 snap.onAddSchema()

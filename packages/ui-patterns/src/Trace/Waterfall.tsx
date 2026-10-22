@@ -4,11 +4,13 @@ import { createContext, use, useCallback, useEffect, useMemo, useState } from 'r
 import type { ComponentProps, CSSProperties } from 'react'
 import { cn } from 'ui'
 
-import { useTrace } from './Trace'
+import { useTrace, useView } from './Trace'
 import type { TimeScale, WaterfallProps } from './types'
 import { createTimeScale } from './utils'
 
 const WaterfallContext = createContext<TimeScale | null>(null)
+
+const LIVE_TRANSITION = 'transition-[left] duration-300 ease-linear motion-reduce:transition-none'
 
 export function useWaterfallScale(): TimeScale {
   const value = use(WaterfallContext)
@@ -24,6 +26,7 @@ export function Waterfall({
   ...props
 }: WaterfallProps) {
   const { bounds } = useTrace()
+  const { window } = useView()
   const [element, setElement] = useState<HTMLDivElement | null>(null)
   const [width, setWidth] = useState(0)
   const ref = useCallback((node: HTMLDivElement | null) => setElement(node), [])
@@ -37,10 +40,11 @@ export function Waterfall({
     return () => observer.disconnect()
   }, [element])
 
-  const [start, end] = bounds
+  const [start, end] = window
+  const origin = bounds[0]
   const scale = useMemo(
-    () => createTimeScale([start, end], Math.max(0, width - treeWidth)),
-    [start, end, width, treeWidth]
+    () => createTimeScale([start, end], Math.max(0, width - treeWidth), origin),
+    [start, end, width, treeWidth, origin]
   )
 
   return (
@@ -64,6 +68,7 @@ export function Waterfall({
 export function Ruler({ className, ...props }: ComponentProps<'div'>) {
   const scale = useWaterfallScale()
   const { isLive, nowMs } = useTrace()
+  const { isZoomed } = useView()
   const nowFraction = scale.toFraction(nowMs)
   const showNow = isLive && nowFraction >= 0 && nowFraction <= 1
 
@@ -79,7 +84,10 @@ export function Ruler({ className, ...props }: ComponentProps<'div'>) {
           <div
             key={tick.ms}
             data-trace-tick
-            className="absolute inset-y-0 border-l border-strong transition-[left] duration-300 ease-linear motion-reduce:transition-none"
+            className={cn(
+              'absolute inset-y-0 border-l border-strong',
+              !isZoomed && LIVE_TRANSITION
+            )}
             style={{ left: `${tick.fraction * 100}%` }}
           >
             <span className="absolute left-2 top-1/2 -translate-y-1/2 whitespace-nowrap font-mono text-xs tabular-nums text-foreground-muted">
@@ -90,7 +98,7 @@ export function Ruler({ className, ...props }: ComponentProps<'div'>) {
         {showNow && (
           <div
             data-trace-now
-            className="absolute inset-y-0 border-l border-brand transition-[left] duration-300 ease-linear motion-reduce:transition-none"
+            className={cn('absolute inset-y-0 border-l border-brand', !isZoomed && LIVE_TRANSITION)}
             style={{ left: `${nowFraction * 100}%` }}
           >
             <span className="absolute left-0 top-0 size-1.5 -translate-x-1/2 rounded-full bg-brand" />

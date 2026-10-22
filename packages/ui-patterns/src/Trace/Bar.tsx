@@ -4,7 +4,7 @@ import type { ComponentProps } from 'react'
 import { Badge, cn } from 'ui'
 
 import { useSpan } from './Rows'
-import { useTrace } from './Trace'
+import { useTrace, useView } from './Trace'
 import type { SpanStatus } from './types'
 import { collapsedChildMidpoints, effectiveEndMs } from './utils'
 import { useWaterfallScale } from './Waterfall'
@@ -18,6 +18,7 @@ const STATUS_CLASS: Record<SpanStatus, string> = {
 export function Bar({ className, style, ...props }: ComponentProps<'div'>) {
   const { row, isSelected } = useSpan()
   const { nowMs } = useTrace()
+  const { isZoomed } = useView()
   const scale = useWaterfallScale()
   const { span } = row
   const left = scale.toFraction(span.startMs)
@@ -33,6 +34,7 @@ export function Bar({ className, style, ...props }: ComponentProps<'div'>) {
         STATUS_CLASS[span.status],
         isSelected && 'ring-2 ring-foreground',
         span.endMs === null &&
+          !isZoomed &&
           'transition-[width] duration-300 ease-linear motion-reduce:transition-none',
         className
       )}
@@ -72,6 +74,7 @@ export function Slowest({ className, style, ...props }: ComponentProps<typeof Ba
   if (row.span.id !== slowestId) return null
 
   const endFraction = scale.toFraction(effectiveEndMs(row.span, nowMs))
+  if (endFraction < 0 || scale.toFraction(row.span.startMs) > 1) return null
 
   return (
     <Badge
@@ -81,7 +84,7 @@ export function Slowest({ className, style, ...props }: ComponentProps<typeof Ba
         'pointer-events-none absolute top-1/2 -translate-y-1/2 bg-background',
         className
       )}
-      style={{ right: `calc(${(1 - endFraction) * 100}% + 4px)`, ...style }}
+      style={{ right: `calc(${(1 - Math.min(endFraction, 1)) * 100}% + 4px)`, ...style }}
       {...props}
     >
       Slowest
@@ -97,15 +100,18 @@ export function CollapsedChildren() {
 
   return (
     <>
-      {collapsedChildMidpoints(index, row.span.id).map((ms, i) => (
-        <div
-          key={i}
-          aria-hidden
-          data-trace-collapsed-mark
-          className="pointer-events-none absolute top-1/2 h-[30%] w-px -translate-y-1/2 bg-background/70"
-          style={{ left: `${scale.toFraction(ms) * 100}%` }}
-        />
-      ))}
+      {collapsedChildMidpoints(index, row.span.id)
+        .map((ms) => scale.toFraction(ms))
+        .filter((fraction) => fraction >= 0 && fraction <= 1)
+        .map((fraction, i) => (
+          <div
+            key={i}
+            aria-hidden
+            data-trace-collapsed-mark
+            className="pointer-events-none absolute top-1/2 h-[30%] w-px -translate-y-1/2 bg-background/70"
+            style={{ left: `${fraction * 100}%` }}
+          />
+        ))}
     </>
   )
 }

@@ -1,4 +1,5 @@
 import { Bar, CollapsedChildren, Markers, Slowest } from './Bar'
+import { Minimap } from './Minimap'
 import { Cell, Duration, Lane, Rows } from './Rows'
 import { Root } from './Trace'
 import { Ruler, Waterfall } from './Waterfall'
@@ -15,6 +16,7 @@ export const Trace = {
   Markers,
   Slowest,
   CollapsedChildren,
+  Minimap,
 }
 
 export { useView } from './Trace'

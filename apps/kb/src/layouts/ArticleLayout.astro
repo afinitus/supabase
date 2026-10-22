@@ -1,6 +1,7 @@
 ---
 import { ExternalLink } from 'lucide-react'
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator, GithubIcon } from 'ui'
+import { TocDisclosure } from 'ui-patterns/Toc'
 import type { TOCItemType } from 'ui-patterns/Toc/types'
 
 import { CodeBlockControlsIsland } from '../components/CodeBlockControlsIsland'
@@ -80,6 +81,7 @@ const markdownUrl = `${pagePath.replace(import.meta.env.BASE_URL, `${import.meta
 				<h1 class="mt-0 mb-0 text-balance">{title}</h1>
 				{description && <p class="not-prose mt-3 text-xl leading-7 text-foreground-light">{description}</p>}
 			</header>
+			<TocDisclosure client:visible items={toc} className="mb-8 lg:hidden" />
 			<slot />
 			<CodeBlockControlsIsland client:only="react" />
 			<div class="not-prose mt-12 -ml-5 lg:hidden">

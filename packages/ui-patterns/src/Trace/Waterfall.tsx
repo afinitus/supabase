@@ -10,9 +10,9 @@ import { createTimeScale } from './utils'
 
 const WaterfallContext = createContext<TimeScale | null>(null)
 
-function useWaterfallScale(): TimeScale {
+export function useWaterfallScale(): TimeScale {
   const value = use(WaterfallContext)
-  if (!value) throw new Error('Trace.Ruler must be rendered inside Trace.Waterfall')
+  if (!value) throw new Error('Trace parts must be rendered inside Trace.Waterfall')
   return value
 }
 
